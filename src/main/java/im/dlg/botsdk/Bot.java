@@ -41,12 +41,12 @@ public class Bot {
     private volatile CompletableFuture<Bot> voidCompletableFuture;
 
     private Bot() {
-        this.executor = new DialogExecutor(4);
+        this.executor = new DialogExecutor(Runtime.getRuntime().availableProcessors());
     }
 
     private Bot(BotConfig botConfig) {
         this.botConfig = botConfig;
-        this.executor = new DialogExecutor(4);
+        this.executor = new DialogExecutor(Runtime.getRuntime().availableProcessors());
     }
 
 
@@ -206,5 +206,9 @@ public class Bot {
     public BotProfileApi botProfileApi() {
         lock();
         return botProfileApil;
+    }
+
+    public void clearDialog() {
+        this.messaging().onMessage(message -> internalBotApi.deleteChat(this.messaging(), message.getPeer()));
     }
 }

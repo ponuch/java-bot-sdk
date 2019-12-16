@@ -12,6 +12,7 @@ import dialog.MessagingOuterClass.HistoryMessage;
 import dialog.MessagingOuterClass.ListLoadMode;
 import dialog.MessagingOuterClass.RequestLoadDialogs;
 import im.dlg.botsdk.domain.Message;
+import im.dlg.botsdk.domain.Peer;
 import im.dlg.botsdk.domain.content.Content;
 import im.dlg.botsdk.light.UpdateListener;
 import im.dlg.botsdk.utils.Constants;
@@ -365,5 +366,24 @@ class InternalBotApi implements StreamObserver<SeqUpdateBox> {
 
     AsyncHttpClient getHttpClient() {
         return httpClient;
+    }
+
+    public CompletableFuture<Void> deleteChat(MessagingApi messagingApi, Peer peer) {
+        try {
+            Field field = messagingApi.getClass().getDeclaredField("privateBot");
+            field.setAccessible(true);
+            InternalBotApi privateBot = (InternalBotApi) field.get(messagingApi);
+            MessagingOuterClass.RequestDeleteChat request = MessagingOuterClass.RequestDeleteChat.newBuilder()
+                    .setPeer(PeerUtils.toServerOutPeer(peer)).build();
+            return privateBot.withToken(
+                    MessagingGrpc.newFutureStub(privateBot.channel.getChannel())
+                            .withDeadlineAfter(2, TimeUnit.MINUTES),
+                    stub -> stub.deleteChat(request)
+            ).thenApplyAsync(resp -> null, privateBot.executor.getExecutor());
+
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 }
