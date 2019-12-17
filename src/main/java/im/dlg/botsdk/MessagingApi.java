@@ -22,6 +22,7 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.lang.reflect.Field;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Date;
@@ -516,5 +517,20 @@ public class MessagingApi {
         FORWARD,
         BACKWARD,
         BOTH
+    }
+
+    /**
+     * Delete chat
+     * @param peer - peer chat
+     * @return a future
+     */
+    public CompletableFuture<Void> deleteChat(@Nonnull Peer peer) {
+        RequestDeleteChat request = RequestDeleteChat.newBuilder()
+                .setPeer(PeerUtils.toServerOutPeer(peer)).build();
+        return privateBot.withToken(
+                MessagingGrpc.newFutureStub(privateBot.channel.getChannel())
+                        .withDeadlineAfter(2, TimeUnit.MINUTES),
+                stub -> stub.deleteChat(request)
+        ).thenApplyAsync(resp -> null, privateBot.executor.getExecutor());
     }
 }
